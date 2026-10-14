@@ -4,6 +4,15 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Contact address sent in the Open Food Facts User-Agent. Kept out of the repo: set `off.contact` in
+// local.properties (gitignored), or pass -Poff.contact=... / set the OFF_CONTACT environment variable.
+val offContact: String? = run {
+    val props = java.util.Properties()
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
+    (props.getProperty("off.contact") ?: providers.gradleProperty("off.contact").orNull ?: System.getenv("OFF_CONTACT"))
+        ?.trim()?.takeIf { it.isNotEmpty() }
+}
+
 android {
     namespace = "pantry.app"
     compileSdk = 35
@@ -14,6 +23,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        val escaped = (offContact ?: "").replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "OFF_CONTACT", "\"$escaped\"")
     }
 
     buildTypes {
@@ -24,7 +35,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     // JGit and its dependencies ship duplicate metadata files.
     packaging {
@@ -33,6 +47,18 @@ android {
                 "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA",
                 "META-INF/DEPENDENCIES", "META-INF/INDEX.LIST",
                 "META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/AL2.0", "META-INF/LGPL2.1",
+            )
+        }
+    }
+}
+
+// Fail real builds (not Gradle sync or clean) when the contact address is missing.
+tasks.matching { it.name.startsWith("generate") && it.name.endsWith("BuildConfig") }.configureEach {
+    doFirst {
+        if (offContact == null) {
+            throw GradleException(
+                "Open Food Facts contact address not set. Add `off.contact=you@example.com` to local.properties, " +
+                    "or pass -Poff.contact=you@example.com, or set the OFF_CONTACT environment variable."
             )
         }
     }
