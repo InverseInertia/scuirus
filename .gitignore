@@ -7,6 +7,7 @@ build/
 .idea/
 *.iml
 local.properties
+local.yaml
 captures/
 
 # Built apps
