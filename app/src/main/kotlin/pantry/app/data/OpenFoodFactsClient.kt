@@ -2,16 +2,17 @@ package pantry.app.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import pantry.app.BuildConfig
 import pantry.core.OpenFoodFacts
 import pantry.core.ProductSuggestion
 import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Looks up barcodes at Open Food Facts. Set [userAgent] to your app name and a contact address;
- * Open Food Facts asks API users to identify themselves.
+ * Looks up barcodes at Open Food Facts. Open Food Facts asks API users to identify themselves, so the
+ * contact address comes from the `off.contact` build setting (see app/build.gradle.kts), not from source.
  */
-class OpenFoodFactsClient(private val userAgent: String = "PantryApp/0.1 (self-hosted; set-your-contact@example.invalid)") {
+class OpenFoodFactsClient(private val userAgent: String = "PantryApp/0.1 (self-hosted; ${BuildConfig.OFF_CONTACT})") {
 
     /** Returns null when the barcode is unknown or the network is unavailable. The caller falls back to manual entry. */
     suspend fun lookup(barcode: String): ProductSuggestion? = withContext(Dispatchers.IO) {
