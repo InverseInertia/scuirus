@@ -39,7 +39,7 @@ Open the project in Android Studio (JDK 17). There is no Gradle wrapper in this 
 
 Run the core tests with `./gradlew :core:test`. Tests that need real git skip themselves silently when `git` is not on the path.
 
-Before building, set your contact address for the Open Food Facts User-Agent (they ask API users to identify themselves). Add `off.contact=you@example.com` to `local.properties` (gitignored), or pass `-Poff.contact=you@example.com`, or set the `OFF_CONTACT` environment variable. The build fails with instructions if it's missing.
+Before building, set your contact address for the Open Food Facts User-Agent (they ask API users to identify themselves). Copy `local.example.yaml` to `local.yaml` in the repo root (gitignored) and set `off_contact`, or pass `-Poff.contact=you@example.com`, or set the `OFF_CONTACT` environment variable. The build fails with instructions if it's missing.
 
 ## Server
 

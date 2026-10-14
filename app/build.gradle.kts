@@ -5,11 +5,12 @@ plugins {
 }
 
 // Contact address sent in the Open Food Facts User-Agent. Kept out of the repo: set `off.contact` in
-// local.properties (gitignored), or pass -Poff.contact=... / set the OFF_CONTACT environment variable.
+// local.yaml in the repo root (gitignored; copy local.example.yaml), or pass -Poff.contact=... / set OFF_CONTACT.
 val offContact: String? = run {
-    val props = java.util.Properties()
-    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { props.load(it) }
-    (props.getProperty("off.contact") ?: providers.gradleProperty("off.contact").orNull ?: System.getenv("OFF_CONTACT"))
+    val yamlValue = rootProject.file("local.yaml").takeIf { it.exists() }?.readLines()
+        ?.firstNotNullOfOrNull { Regex("""^\s*off_contact\s*:\s*(.*?)\s*(#.*)?$""").find(it)?.groupValues?.get(1) }
+        ?.trim('"', '\'')
+    (yamlValue?.takeIf { it.isNotEmpty() } ?: providers.gradleProperty("off.contact").orNull ?: System.getenv("OFF_CONTACT"))
         ?.trim()?.takeIf { it.isNotEmpty() }
 }
 
@@ -57,7 +58,7 @@ tasks.matching { it.name.startsWith("generate") && it.name.endsWith("BuildConfig
     doFirst {
         if (offContact == null) {
             throw GradleException(
-                "Open Food Facts contact address not set. Add `off.contact=you@example.com` to local.properties, " +
+                "Open Food Facts contact address not set. Copy local.example.yaml to local.yaml in the repo root and set off_contact, " +
                     "or pass -Poff.contact=you@example.com, or set the OFF_CONTACT environment variable."
             )
         }

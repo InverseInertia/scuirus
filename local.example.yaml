@@ -1,0 +1,3 @@
+# Copy this file to local.yaml (gitignored) and fill in your own values.
+# Contact address sent in the Open Food Facts User-Agent.
+off_contact: you@example.com
