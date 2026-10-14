@@ -1,0 +1,19 @@
+# Gradle and Kotlin build output
+.gradle/
+.kotlin/
+build/
+
+# Android Studio and local machine settings
+.idea/
+*.iml
+local.properties
+captures/
+
+# Built apps
+*.apk
+*.aab
+app/release/
+
+# OS files
+.DS_Store
+Thumbs.db
