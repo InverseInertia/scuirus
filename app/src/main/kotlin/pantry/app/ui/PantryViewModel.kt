@@ -20,6 +20,7 @@ import pantry.core.OcrLine
 import pantry.core.OcrRows
 import pantry.core.Product
 import pantry.core.ProductStats
+import pantry.app.data.LookupResult
 import pantry.core.ProductSuggestion
 import pantry.core.Rational
 import pantry.core.ReceiptDraft
@@ -34,7 +35,13 @@ import java.time.LocalDate
 enum class ScanMode { ADD, REMOVE }
 
 /** Shown when a scanned barcode is not in the catalog yet. [suggestion] fills in once Open Food Facts answers. */
-data class NewProductPrompt(val barcode: String, val suggestion: ProductSuggestion? = null, val loading: Boolean = true)
+data class NewProductPrompt(
+    val barcode: String,
+    val suggestion: ProductSuggestion? = null,
+    val loading: Boolean = true,
+    /** Set when the lookup itself failed, as opposed to the product being unknown. */
+    val lookupError: String? = null,
+)
 
 /** The user's decision for one receipt line. */
 data class ReceiptChoice(
@@ -140,8 +147,11 @@ class PantryViewModel(private val app: PantryApp) : ViewModel() {
                         snackbar = "Added 1 ${added.first.unit} ${added.first.name}"
                     } else {
                         newProductPrompt = NewProductPrompt(code)
-                        val suggestion = container.lookup.lookup(code)
-                        newProductPrompt = NewProductPrompt(code, suggestion, loading = false)
+                        newProductPrompt = when (val r = container.lookup.lookup(code)) {
+                            is LookupResult.Found -> NewProductPrompt(code, r.suggestion, loading = false)
+                            is LookupResult.NotFound -> NewProductPrompt(code, loading = false)
+                            is LookupResult.Failed -> NewProductPrompt(code, loading = false, lookupError = r.reason)
+                        }
                     }
                 }
             } catch (e: Exception) {

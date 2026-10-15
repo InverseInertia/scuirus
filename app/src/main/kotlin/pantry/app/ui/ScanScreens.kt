@@ -2,6 +2,7 @@ package pantry.app.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,7 +57,10 @@ fun ScanScreen(vm: PantryViewModel) {
                 BarcodeScannerView(Modifier.fillMaxSize(), onBarcode = vm::onBarcode)
             }
         }
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             OutlinedTextField(
                 manual, { manual = it }, label = { Text("Type a barcode") }, singleLine = true, modifier = Modifier.weight(1f),
             )
@@ -87,6 +91,7 @@ private fun NewProductDialog(prompt: NewProductPrompt, vm: PantryViewModel) {
                     when {
                         prompt.loading -> "Looking it up..."
                         s != null -> "Found on Open Food Facts. Check the details."
+                        prompt.lookupError != null -> "Could not reach Open Food Facts (${prompt.lookupError}). Enter the details."
                         else -> "Not found online. Enter the details."
                     },
                     style = MaterialTheme.typography.bodySmall,

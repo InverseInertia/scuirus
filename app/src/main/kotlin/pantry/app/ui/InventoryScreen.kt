@@ -200,7 +200,7 @@ private fun expiryText(d: LocalDate, today: LocalDate): String {
 
 private fun expiryColor(d: LocalDate, today: LocalDate): Color {
     val days = ChronoUnit.DAYS.between(today, d)
-    return if (days <= 0) Color(0xFFB3261E) else if (days <= 3) Color(0xFF9A6700) else Color.Unspecified
+    return if (days <= 0) Color(0xFFFF7B6B) else if (days <= 3) Color(0xFFE8A93C) else Color.Unspecified
 }
 
 private fun statsLine(s: ProductStats, p: Product): String {

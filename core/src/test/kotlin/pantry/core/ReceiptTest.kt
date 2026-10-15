@@ -93,7 +93,8 @@ class ReceiptTest {
         assertEquals("sweet spreads", s.category)
         assertNull(OpenFoodFacts.parse("1", """{"status":0,"status_verbose":"product not found"}"""))
         assertNull(OpenFoodFacts.parse("1", "<html>oops</html>"))
-        assertTrue(OpenFoodFacts.url("0123-456").endsWith("fields=code,product_name,brands,quantity,categories_tags"))
+        assertEquals("Oat drink", OpenFoodFacts.parse("2", """{"status":1,"product":{"product_name":"","product_name_en":"Oat drink"}}""")!!.name)
+        assertTrue(OpenFoodFacts.url("0123-456").endsWith("fields=code,product_name,product_name_en,generic_name,brands,quantity,categories_tags"))
         assertTrue(OpenFoodFacts.url("0123-456").contains("/0123456.json"))
     }
 }

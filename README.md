@@ -1,4 +1,4 @@
-# Pantry
+# Scuirus
 
 An Android app for tracking groceries so less food goes bad. You add stock by barcode scan or receipt photo, remove it by barcode scan or one-tap buttons, and every change goes into a git repository that syncs through a server you run.
 

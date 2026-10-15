@@ -1,7 +1,9 @@
 package pantry.app.ui
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -48,11 +50,11 @@ fun PantryRoot(vm: PantryViewModel, settings: Settings) {
         vm.snackbar?.let { snack.showSnackbar(it); vm.snackbar = null }
     }
 
-    MaterialTheme {
+    ScuirusTheme {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Pantry") },
+                    title = { Text("Scuirus") },
                     actions = { IconButton(onClick = { showSettings = !showSettings }) { Icon(Icons.Filled.Settings, "Settings") } },
                 )
             },
@@ -80,7 +82,7 @@ fun PantryRoot(vm: PantryViewModel, settings: Settings) {
                 }
             },
         ) { pad ->
-            Column(Modifier.padding(pad).fillMaxSize()) {
+            Column(Modifier.padding(pad).consumeWindowInsets(pad).imePadding().fillMaxSize()) {
                 when {
                     vm.startupError != null && !showSettings -> {
                         Text(vm.startupError!!, modifier = Modifier.padding(16.dp), color = MaterialTheme.colorScheme.error)

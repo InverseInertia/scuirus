@@ -75,7 +75,7 @@ fun CameraPermissionGate(modifier: Modifier = Modifier, content: @Composable () 
 fun BarcodeScannerView(modifier: Modifier = Modifier, onBarcode: (String) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember { PreviewView(context) }
+    val previewView = remember { PreviewView(context).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE } }
     val callback by rememberUpdatedState(onBarcode)
 
     DisposableEffect(lifecycleOwner) {
@@ -126,7 +126,7 @@ fun BarcodeScannerView(modifier: Modifier = Modifier, onBarcode: (String) -> Uni
 fun ReceiptCaptureView(modifier: Modifier = Modifier, onResult: (List<OcrLine>) -> Unit, onError: (String) -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val previewView = remember { PreviewView(context) }
+    val previewView = remember { PreviewView(context).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE } }
     val capture = remember { ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).build() }
     val result by rememberUpdatedState(onResult)
     val error by rememberUpdatedState(onError)
