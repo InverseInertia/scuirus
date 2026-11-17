@@ -6,8 +6,8 @@ from pathlib import Path
 
 import uvicorn
 
-from pantry.config import Config
-from pantry.web import create_app
+from scuirus.config import Config
+from scuirus.web import create_app
 from tests.conftest import FakeReader
 
 

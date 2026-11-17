@@ -1,4 +1,4 @@
-"""Settings from pantry.toml (optional) with environment-variable overrides."""
+"""Settings from scuirus.toml (optional) with environment-variable overrides."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class Config:
 
     @classmethod
     def load(cls, path: Path | None = None) -> "Config":
-        path = path or Path(os.environ.get("PANTRY_CONFIG", "pantry.toml"))
+        path = path or Path(os.environ.get("SCUIRUS_CONFIG", "scuirus.toml"))
         c = cls()
         if path.exists():
             t = tomllib.loads(path.read_text())
@@ -37,10 +37,10 @@ class Config:
             c.ollama_model = ol.get("model", c.ollama_model)
             c.off_contact = t.get("openfoodfacts", {}).get("contact") or None
         env = os.environ
-        c.data_dir = Path(env.get("PANTRY_DATA_DIR", c.data_dir))
-        c.reader = env.get("PANTRY_READER", c.reader)
-        c.claude_model = env.get("PANTRY_CLAUDE_MODEL", c.claude_model)
-        c.ollama_url = env.get("PANTRY_OLLAMA_URL", c.ollama_url)
-        c.ollama_model = env.get("PANTRY_OLLAMA_MODEL", c.ollama_model)
+        c.data_dir = Path(env.get("SCUIRUS_DATA_DIR", c.data_dir))
+        c.reader = env.get("SCUIRUS_READER", c.reader)
+        c.claude_model = env.get("SCUIRUS_CLAUDE_MODEL", c.claude_model)
+        c.ollama_url = env.get("SCUIRUS_OLLAMA_URL", c.ollama_url)
+        c.ollama_model = env.get("SCUIRUS_OLLAMA_MODEL", c.ollama_model)
         c.off_contact = env.get("OFF_CONTACT", c.off_contact)
         return c

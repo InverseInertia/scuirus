@@ -1,7 +1,7 @@
 import zxingcpp
 from PIL import Image
 
-from pantry import barcode, images
+from scuirus import barcode, images
 from tests.conftest import barcode_png, photo_bytes
 
 

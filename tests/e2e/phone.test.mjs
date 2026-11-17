@@ -13,7 +13,7 @@ const { chromium, devices } = require("playwright");
 
 const root = resolve(import.meta.dirname, "../..");
 const python = existsSync(join(root, ".venv/bin/python")) ? join(root, ".venv/bin/python") : "python3";
-const work = mkdtempSync(join(tmpdir(), "pantry-e2e-"));
+const work = mkdtempSync(join(tmpdir(), "scuirus-e2e-"));
 const shots = process.env.SHOTS || join(work, "shots");
 const port = 8765 + Math.floor(Math.random() * 1000);
 const base = `http://127.0.0.1:${port}`;

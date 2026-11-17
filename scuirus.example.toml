@@ -1,5 +1,5 @@
-# Copy to pantry.toml (gitignored) and edit. Environment variables override these:
-# PANTRY_DATA_DIR, PANTRY_READER, PANTRY_CLAUDE_MODEL, PANTRY_OLLAMA_URL, PANTRY_OLLAMA_MODEL, OFF_CONTACT,
+# Copy to scuirus.toml (gitignored) and edit. Environment variables override these:
+# SCUIRUS_DATA_DIR, SCUIRUS_READER, SCUIRUS_CLAUDE_MODEL, SCUIRUS_OLLAMA_URL, SCUIRUS_OLLAMA_MODEL, OFF_CONTACT,
 # ANTHROPIC_API_KEY.
 
 # SQLite database and receipt photos live here. Back this folder up.

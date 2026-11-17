@@ -3,8 +3,8 @@ from fractions import Fraction as F
 
 import pytest
 
-from pantry.service import Invalid, PantryService
-from pantry.store import Store
+from scuirus.service import Invalid, ScuirusService
+from scuirus.store import Store
 
 
 def test_scan_add_and_use(service):
@@ -39,11 +39,11 @@ def test_duplicate_barcode_rejected(service):
 
 def test_state_survives_restart(tmp_path, clock):
     path = tmp_path / "db.sqlite3"
-    s1 = PantryService(Store(path), clock=clock)
+    s1 = ScuirusService(Store(path), clock=clock)
     p = s1.new_product("Rice", unit="lb")
     lot = s1.add_lot(p.id, F(5), price=F("7.99"))
     s1.remove_from_lot(lot, F(1, 3))
-    s2 = PantryService(Store(path), clock=clock)
+    s2 = ScuirusService(Store(path), clock=clock)
     assert s2.snapshot.lots[lot].remaining == F(14, 3)
     assert s2.snapshot.lots[lot].price == F("7.99")
 

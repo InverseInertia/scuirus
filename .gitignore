@@ -7,7 +7,7 @@ __pycache__/
 
 # Runtime data and local settings
 data/
-pantry.toml
+scuirus.toml
 
 # OS files
 .DS_Store

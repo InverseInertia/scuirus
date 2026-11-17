@@ -22,7 +22,7 @@ class Invalid(Exception):
     pass
 
 
-class PantryService:
+class ScuirusService:
     def __init__(self, store: Store, clock: Callable[[], datetime] | None = None):
         self.store = store
         self.clock = clock or (lambda: datetime.now(timezone.utc))

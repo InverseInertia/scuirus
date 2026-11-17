@@ -91,7 +91,7 @@ function show(view) {
   if (view === "stock") loadStock();
   if (view === "receipts") loadReceipts();
   if (view === "history") loadHistory();
-  try { localStorage.setItem("pantry.view", view); } catch {}
+  try { localStorage.setItem("scuirus.view", view); } catch {}
 }
 
 $$(".tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.view)));
@@ -667,7 +667,7 @@ async function init() {
     ? `Receipts are read on the server with ${state.status.reader === "claude" ? "Claude" : "a local model (Ollama)"}.`
     : "No receipt reader is configured on the server.";
   let start = "stock";
-  try { start = localStorage.getItem("pantry.view") || "stock"; } catch {}
+  try { start = localStorage.getItem("scuirus.view") || "stock"; } catch {}
   show(titles[start] ? start : "stock");
 }
 

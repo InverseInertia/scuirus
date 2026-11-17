@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from fractions import Fraction as F
 
-from pantry.domain import Event, parse_qty, qty_display, replay, stats
+from scuirus.domain import Event, parse_qty, qty_display, replay, stats
 
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
 

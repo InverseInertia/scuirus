@@ -1,4 +1,4 @@
-"""Run the server: python -m pantry [--host 127.0.0.1] [--port 8000]"""
+"""Run the server: python -m scuirus [--host 127.0.0.1] [--port 8000]"""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import logging
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(prog="pantry")
+    ap = argparse.ArgumentParser(prog="scuirus")
     ap.add_argument("--host", default="127.0.0.1", help="Keep 127.0.0.1 and let `tailscale serve` handle access.")
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()

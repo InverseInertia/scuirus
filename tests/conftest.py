@@ -8,10 +8,10 @@ import pytest
 import zxingcpp
 from PIL import Image, ImageDraw
 
-from pantry.config import Config
-from pantry.receipts.schema import Receipt, ReceiptItem
-from pantry.service import PantryService
-from pantry.store import Store
+from scuirus.config import Config
+from scuirus.receipts.schema import Receipt, ReceiptItem
+from scuirus.service import ScuirusService
+from scuirus.store import Store
 
 
 class Clock:
@@ -32,7 +32,7 @@ def clock():
 
 @pytest.fixture
 def service(tmp_path: Path, clock):
-    return PantryService(Store(tmp_path / "db.sqlite3"), clock=clock)
+    return ScuirusService(Store(tmp_path / "db.sqlite3"), clock=clock)
 
 
 def barcode_png(code: str, fmt=zxingcpp.BarcodeFormat.UPCA, scale=4, pad=40, rotate=0) -> bytes:
@@ -98,7 +98,7 @@ def sample_receipt() -> Receipt:
 def make_client(tmp_path: Path):
     from fastapi.testclient import TestClient
 
-    from pantry.web import create_app
+    from scuirus.web import create_app
 
     def make(reader=None, lookup=None):
         cfg = Config(data_dir=tmp_path / "data", reader="none")

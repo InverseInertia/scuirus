@@ -30,7 +30,7 @@ def parse(barcode: str, body: dict) -> dict | None:
 
 def lookup(barcode: str, contact: str | None, client: httpx.Client | None = None) -> dict | None:
     """Open Food Facts asks API users to send a User-Agent naming the app and a contact."""
-    ua = f"PantrySelfHosted/0.2 ({contact})" if contact else "PantrySelfHosted/0.2"
+    ua = f"ScuirusSelfHosted/0.2 ({contact})" if contact else "ScuirusSelfHosted/0.2"
     http = client or httpx.Client(timeout=6)
     try:
         r = http.get(url(barcode), headers={"User-Agent": ua, "Accept": "application/json"})

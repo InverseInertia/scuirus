@@ -1,4 +1,4 @@
-from pantry import openfoodfacts
+from scuirus import openfoodfacts
 from tests.conftest import barcode_png
 
 
@@ -53,7 +53,7 @@ def test_validation_errors_are_400(make_client):
 def test_frontend_served(make_client):
     client = make_client()
     r = client.get("/")
-    assert r.status_code == 200 and "<title>Pantry</title>" in r.text
+    assert r.status_code == 200 and "<title>Scuirus</title>" in r.text
     assert client.get("/app.js").status_code == 200
     assert client.get("/manifest.webmanifest").status_code == 200
 

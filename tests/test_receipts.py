@@ -4,11 +4,11 @@ import time
 import httpx
 from PIL import Image
 
-from pantry.matcher import normalize, suggest
-from pantry.domain import Product
-from pantry.receipts.pipeline import checks
-from pantry.receipts.readers import OllamaReader, ReaderError
-from pantry.receipts.schema import Receipt
+from scuirus.matcher import normalize, suggest
+from scuirus.domain import Product
+from scuirus.receipts.pipeline import checks
+from scuirus.receipts.readers import OllamaReader, ReaderError
+from scuirus.receipts.schema import Receipt
 from tests.conftest import FakeReader, photo_bytes, sample_receipt
 
 
@@ -101,7 +101,7 @@ def test_one_receipt_groups_photos(make_client):
     wait_for(client, up["created"][0], "ready")
     assert len(reader.calls[0]) == 2
     assert client.get(f"/receipt-images/{up['created'][0]}/2.jpg").status_code == 200
-    assert client.get("/receipt-images/../pantry.sqlite3").status_code == 404
+    assert client.get("/receipt-images/../scuirus.sqlite3").status_code == 404
 
 
 def test_reader_error_shown_and_retry(make_client):
@@ -154,7 +154,7 @@ def test_claude_reader_request_and_parse():
     import anthropic
     import httpx2
 
-    from pantry.receipts.readers import ClaudeReader
+    from scuirus.receipts.readers import ClaudeReader
 
     seen = {}
 
@@ -181,7 +181,7 @@ def test_claude_reader_refusal():
     import anthropic
     import httpx2
 
-    from pantry.receipts.readers import ClaudeReader
+    from scuirus.receipts.readers import ClaudeReader
 
     def handler(req):
         return httpx2.Response(200, json={

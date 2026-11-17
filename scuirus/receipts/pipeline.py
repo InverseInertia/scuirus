@@ -11,7 +11,7 @@ from pathlib import Path
 from .. import images as imgs
 from ..domain import new_id
 from ..matcher import suggest
-from ..service import PantryService
+from ..service import ScuirusService
 from ..store import Store
 from .readers import Reader, ReaderError
 
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 
 class ReceiptPipeline:
-    def __init__(self, store: Store, service: PantryService, reader: Reader | None, image_dir: Path, workers: int = 1):
+    def __init__(self, store: Store, service: ScuirusService, reader: Reader | None, image_dir: Path, workers: int = 1):
         self.store = store
         self.service = service
         self.reader = reader

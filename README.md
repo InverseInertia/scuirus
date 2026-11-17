@@ -1,4 +1,4 @@
-# Pantry
+# Scuirus
 
 A self-hosted grocery tracker that runs on a home server and opens in the phone's browser over Tailscale. You add stock by scanning barcodes or importing receipt photos, and remove it by scanning or with one-tap buttons. The server does all the work: it decodes barcodes, reads receipts with a vision model, and stores everything in SQLite. The phone only displays the pages.
 
@@ -7,14 +7,14 @@ This replaces the earlier Android app, which is still in git history (commit `92
 ## How it fits together
 
 ```
-phone browser ──https──> tailscale serve ──> 127.0.0.1:8000  python -m pantry
+phone browser ──https──> tailscale serve ──> 127.0.0.1:8000  python -m scuirus
                                                               ├─ SQLite: products, events, aliases, receipts
                                                               ├─ zxing-cpp: barcode decoding
                                                               └─ receipt reader: Claude API or Ollama
 ```
 
 ```
-pantry/
+scuirus/
   domain.py        events, replay, stats (exact fractions)
   store.py         SQLite
   service.py       every stock change goes through here
@@ -32,11 +32,11 @@ deploy/            systemd unit for distrobox
 Inside a distrobox with Python 3.11 or newer (any Fedora or Ubuntu box works):
 
 ```bash
-distrobox create --name pantry --image registry.fedoraproject.org/fedora-toolbox:41
+distrobox create --name scuirus --image registry.fedoraproject.org/fedora-toolbox:41
 ```
 
 ```bash
-distrobox enter pantry
+distrobox enter scuirus
 ```
 
 ```bash
@@ -44,16 +44,16 @@ cd ~/scuirus && python3 -m venv .venv && .venv/bin/pip install -e .
 ```
 
 ```bash
-cp pantry.example.toml pantry.toml
+cp scuirus.example.toml scuirus.toml
 ```
 
-Edit `pantry.toml` (receipt reader, API key or Ollama URL, Open Food Facts contact), then start it:
+Edit `scuirus.toml` (receipt reader, API key or Ollama URL, Open Food Facts contact), then start it:
 
 ```bash
-.venv/bin/python -m pantry
+.venv/bin/python -m scuirus
 ```
 
-It listens on `127.0.0.1:8000` only. To run it as a service that starts on boot, use `deploy/pantry.service`; the install commands are at the top of that file.
+It listens on `127.0.0.1:8000` only. To run it as a service that starts on boot, use `deploy/scuirus.service`; the install commands are at the top of that file.
 
 ### Reaching it from the phone
 
@@ -71,7 +71,7 @@ In Chrome on Android, the menu offers Add to Home screen (or Install app) to ope
 
 Receipts are read by a vision model that returns structured data: store, date, each line with the printed text, a readable name, quantity and unit, price after discounts, and whether it is food. Tall receipt photos are cut into overlapping slices first, so small print survives the model's image downscaling. Before you add anything, the review screen compares the lines against the printed subtotal, so a missed or misread line shows up as a warning.
 
-Two backends, chosen in `pantry.toml`:
+Two backends, chosen in `scuirus.toml`:
 
 - **`claude`** (default): Anthropic's API with `claude-opus-5-5`. The most accurate option, and it copes with crumpled, angled and faded receipts. Photos are sent to Anthropic. Set `ANTHROPIC_API_KEY` or `[claude] api_key`. Expect a few cents per receipt at `effort = "high"`. It enables Anthropic's server-side refusal fallback, so in the unlikely case the main model declines an image, the request is retried on a fallback model instead of failing.
 - **`ollama`**: a local vision model through [Ollama](https://ollama.com), so nothing leaves the house. Pull a vision model first, for example `ollama pull qwen2.5vl:7b`. Accuracy depends on the model size and GPU memory. Expect it to need more corrections than Claude, especially on long receipts.
@@ -92,7 +92,7 @@ The Scan tab streams camera frames to the server about three times a second, and
 - Quantities are exact fractions, so three removals of 1/3 empty a lot exactly.
 - Removing more than you have is capped at what's in stock. It never goes negative.
 - "Added by mistake" on a lot voids it, which removes it from stock and spending stats while keeping the history.
-- Everything lives in `data/`: `pantry.sqlite3` plus `receipts/<id>/*.jpg` (the receipt photos are kept). Back up that folder.
+- Everything lives in `data/`: `scuirus.sqlite3` plus `receipts/<id>/*.jpg` (the receipt photos are kept). Back up that folder.
 
 ## Tests
 
@@ -114,7 +114,7 @@ node tests/e2e/phone.test.mjs
 
 ## What was not verified
 
-- **Neither receipt reader has run against a real model.** No API key or GPU was available. The first real receipts will show how good the extraction is, and the prompt in `pantry/receipts/schema.py` is the place to tune it.
+- **Neither receipt reader has run against a real model.** No API key or GPU was available. The first real receipts will show how good the extraction is, and the prompt in `scuirus/receipts/schema.py` is the place to tune it.
 - No real phone camera or real receipt photos. The fake camera shows a clean, flat barcode.
 - `tailscale serve` and the systemd unit were written from documentation, not run on a Bazzite machine.
 - The Open Food Facts lookup was tested against a hand-written reply, not the live API.

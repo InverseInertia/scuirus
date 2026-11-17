@@ -21,7 +21,7 @@ from .config import Config
 from .domain import LOCATIONS, Lot, Product, ProductStats, parse_qty, qty_display, qty_text
 from .receipts.pipeline import ReceiptPipeline
 from .receipts.readers import ClaudeReader, OllamaReader, Reader
-from .service import Invalid, NotFound, PantryService
+from .service import Invalid, NotFound, ScuirusService
 from .store import Store, ts_text
 
 log = logging.getLogger(__name__)
@@ -161,14 +161,14 @@ def make_reader(cfg: Config) -> Reader | None:
 def create_app(cfg: Config | None = None, reader: Reader | None = None,
                lookup: Callable[[str], dict | None] | None = None) -> FastAPI:
     cfg = cfg or Config.load()
-    store = Store(cfg.data_dir / "pantry.sqlite3")
-    service = PantryService(store)
+    store = Store(cfg.data_dir / "scuirus.sqlite3")
+    service = ScuirusService(store)
     reader = reader if reader is not None else make_reader(cfg)
     image_dir = cfg.data_dir / "receipts"
     pipeline = ReceiptPipeline(store, service, reader, image_dir)
     lookup = lookup or (lambda code: openfoodfacts.lookup(code, cfg.off_contact))
 
-    app = FastAPI(title="Pantry")
+    app = FastAPI(title="Scuirus")
     app.state.service = service
     app.state.pipeline = pipeline
     app.state.store = store
