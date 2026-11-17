@@ -1,0 +1,18 @@
+# systemd user service that runs Pantry inside a distrobox container.
+# Install on the host (not inside the box):
+#   mkdir -p ~/.config/systemd/user && cp deploy/pantry.service ~/.config/systemd/user/
+#   edit the paths and box name below if yours differ
+#   systemctl --user daemon-reload && systemctl --user enable --now pantry
+#   loginctl enable-linger "$USER"     # keep it running when you are logged out
+[Unit]
+Description=Pantry grocery tracker
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/scuirus
+ExecStart=/usr/bin/distrobox enter pantry -- %h/scuirus/.venv/bin/python -m pantry --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

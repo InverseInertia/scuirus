@@ -1,19 +1,13 @@
-# Gradle and Kotlin build output
-.gradle/
-.kotlin/
-build/
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
 
-# Android Studio and local machine settings
-.idea/
-*.iml
-local.properties
-local.yaml
-captures/
-
-# Built apps
-*.apk
-*.aab
-app/release/
+# Runtime data and local settings
+data/
+pantry.toml
 
 # OS files
 .DS_Store

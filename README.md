@@ -1,70 +1,127 @@
 # Pantry
 
-An Android app for tracking groceries so less food goes bad. You add stock by barcode scan or receipt photo, remove it by barcode scan or one-tap buttons, and every change goes into a git repository that syncs through a server you run.
+A self-hosted grocery tracker that runs on a home server and opens in the phone's browser over Tailscale. You add stock by scanning barcodes or importing receipt photos, and remove it by scanning or with one-tap buttons. The server does all the work: it decodes barcodes, reads receipts with a vision model, and stores everything in SQLite. The phone only displays the pages.
 
-Status: the `core` module is tested. The `app` module has never been compiled. Read "What was verified" before trusting anything in it.
+This replaces the earlier Android app, which is still in git history (commit `9201d21`).
 
-## Layout
-
-```
-core/   Pure Kotlin (JVM). Fractions, event replay, JSON Lines codec, receipt parsing, git workflow rules. 45 tests.
-app/    Android. CameraX, ML Kit, JGit, Jetpack Compose. Depends on core.
-```
-
-## Data in the git repository
+## How it fits together
 
 ```
-catalog.jsonl                     one product per line, sorted by id
-aliases.jsonl                     one receipt-text alias per line, learned from your corrections
-events/<device>/<yyyy-MM>.jsonl   append-only history, one JSON object per line
-receipts/<yyyy-MM>/<id>.txt       raw OCR text of each scanned receipt
-.pantry-local/                    git-ignored, holds pending change summaries for commit messages
+phone browser ──https──> tailscale serve ──> 127.0.0.1:8000  python -m pantry
+                                                              ├─ SQLite: products, events, aliases, receipts
+                                                              ├─ zxing-cpp: barcode decoding
+                                                              └─ receipt reader: Claude API or Ollama
 ```
 
-Current stock is not stored. The app rebuilds it by replaying the events, so it can never disagree with the history.
+```
+pantry/
+  domain.py        events, replay, stats (exact fractions)
+  store.py         SQLite
+  service.py       every stock change goes through here
+  barcode.py       server-side decoding
+  matcher.py       receipt line -> catalog product, plus learned aliases
+  receipts/        reader backends, schema, upload pipeline
+  web.py           HTTP API, serves static/
+  static/          the frontend: plain HTML/CSS/JS, no build step
+tests/             pytest suite and a browser test (tests/e2e)
+deploy/            systemd unit for distrobox
+```
 
-Event types are `add`, `consume`, `discard`, `adjust`, and `void`. A `consume` or `discard` without a lot id takes from the earliest-expiring lots first and spans lots when needed. Quantities are exact fractions written as text (`"1/3"`, `"2"`), so three removals of a third empty a lot exactly.
+## Running it on the server (Bazzite + distrobox)
 
-Each device writes only to its own event files. Two phones that work offline and then sync never edit the same event file, so git merges them without conflicts. Replay sorts by timestamp and event id, so both phones end up with identical stock after pulling.
+Inside a distrobox with Python 3.11 or newer (any Fedora or Ubuntu box works):
 
-Every data file is JSON Lines: one flat object per line, every value a string. A barcode is stored as `"012345678905"`, so the leading zero survives. If you edit the catalog by hand and write a bare number, the app refuses to load it and names the file and line, rather than quietly turning `012345` into `12`. A bad line in the catalog stops the load on purpose, because skipping it would delete that product the next time the file is saved. Bad lines in event files are skipped and listed on the Changes tab.
+```bash
+distrobox create --name pantry --image registry.fedoraproject.org/fedora-toolbox:41
+```
 
-## The commit rule
+```bash
+distrobox enter pantry
+```
 
-Every operation records a one-line summary for the next commit message. The Changes tab shows uncommitted files, a pre-filled message, Commit, and Discard. Sync is disabled while anything is uncommitted. Sync fetches, rebases your commits onto the server's, and pushes. If the rebase conflicts, it aborts and leaves your files untouched.
+```bash
+cd ~/scuirus && python3 -m venv .venv && .venv/bin/pip install -e .
+```
 
-## Building
+```bash
+cp pantry.example.toml pantry.toml
+```
 
-Open the project in Android Studio (JDK 17). There is no Gradle wrapper in this archive because it could not be generated offline. Android Studio creates one, or run `gradle wrapper --gradle-version 8.9` once.
+Edit `pantry.toml` (receipt reader, API key or Ollama URL, Open Food Facts contact), then start it:
 
-Run the core tests with `./gradlew :core:test`. Tests that need real git skip themselves silently when `git` is not on the path.
+```bash
+.venv/bin/python -m pantry
+```
 
-Before building, set your contact address for the Open Food Facts User-Agent (they ask API users to identify themselves). Copy `local.example.yaml` to `local.yaml` in the repo root (gitignored) and set `off_contact`, or pass `-Poff.contact=you@example.com`, or set the `OFF_CONTACT` environment variable. The build fails with instructions if it's missing.
+It listens on `127.0.0.1:8000` only. To run it as a service that starts on boot, use `deploy/pantry.service`; the install commands are at the top of that file.
 
-## Server
+### Reaching it from the phone
 
-Any git host that speaks HTTPS works. The simplest is a bare repository behind Gitea or Forgejo. Create an access token with write access to that one repository and enter the HTTPS URL, username, and token in Settings. The token is stored with Android's Keystore-backed encrypted preferences.
+Run this on the Bazzite host, where Tailscale runs:
+
+```bash
+sudo tailscale serve --bg 8000
+```
+
+The app is then at `https://<machine-name>.<tailnet>.ts.net` on every device in your tailnet. HTTPS matters: browsers only allow the live camera on secure origins. MagicDNS and HTTPS certificates must be turned on in the Tailscale admin console under DNS. Without HTTPS the Photo button and receipt import still work, because they use the phone's file picker instead of the live camera.
+
+In Chrome on Android, the menu offers Add to Home screen (or Install app) to open it like an app.
+
+## Receipt reading
+
+Receipts are read by a vision model that returns structured data: store, date, each line with the printed text, a readable name, quantity and unit, price after discounts, and whether it is food. Tall receipt photos are cut into overlapping slices first, so small print survives the model's image downscaling. Before you add anything, the review screen compares the lines against the printed subtotal, so a missed or misread line shows up as a warning.
+
+Two backends, chosen in `pantry.toml`:
+
+- **`claude`** (default): Anthropic's API with `claude-opus-5-5`. The most accurate option, and it copes with crumpled, angled and faded receipts. Photos are sent to Anthropic. Set `ANTHROPIC_API_KEY` or `[claude] api_key`. Expect a few cents per receipt at `effort = "high"`. It enables Anthropic's server-side refusal fallback, so in the unlikely case the main model declines an image, the request is retried on a fallback model instead of failing.
+- **`ollama`**: a local vision model through [Ollama](https://ollama.com), so nothing leaves the house. Pull a vision model first, for example `ollama pull qwen2.5vl:7b`. Accuracy depends on the model size and GPU memory. Expect it to need more corrections than Claude, especially on long receipts.
+
+Each reading is matched against your catalog. When you confirm a match, the printed text (`ORG WHL MLK 1GAL`) is saved as an alias, and the next receipt with the same text matches automatically.
+
+### Importing from the phone
+
+On the Receipts tab, Import receipt photos opens the phone's picker, where you can select several photos at once from a receipts folder. Each photo is treated as its own receipt unless you tick "These photos are parts of one long receipt". Photos already imported are skipped, so you can re-select the whole folder each time. Reading runs in the background one receipt at a time. The list refreshes itself, and each receipt shows Review when it's ready.
+
+## Barcodes
+
+The Scan tab streams camera frames to the server about three times a second, and the server decodes them with zxing-cpp. Use up removes the product's "uses per scan" amount (for example 1/4 of a gallon) from the lot that expires first. Add adds one unit. An unknown barcode opens the new-product form, pre-filled from Open Food Facts when they know the code. Holding a code in view does not repeat the action. Move it out of view for a few seconds to scan the same item again.
+
+## Data
+
+- Stock is never stored. It is rebuilt from an append-only event log (`add`, `consume`, `discard`, `adjust`, `void`), so the stock can't drift from the history. The History tab shows the log.
+- Quantities are exact fractions, so three removals of 1/3 empty a lot exactly.
+- Removing more than you have is capped at what's in stock. It never goes negative.
+- "Added by mistake" on a lot voids it, which removes it from stock and spending stats while keeping the history.
+- Everything lives in `data/`: `pantry.sqlite3` plus `receipts/<id>/*.jpg` (the receipt photos are kept). Back up that folder.
+
+## Tests
+
+```bash
+.venv/bin/pip install -e '.[test]' && .venv/bin/python -m pytest
+```
+
+The browser test needs Node with Playwright and ffmpeg. It starts the server with a fake receipt reader, opens Chromium at a Pixel 7 size with a fake camera that shows a barcode, and goes through creating a product by scan, use-up scans, a typed barcode, a receipt import and review, the stock list, and history:
+
+```bash
+node tests/e2e/phone.test.mjs
+```
 
 ## What was verified
 
-- The 45 core tests pass. They ran under `kotlinc` 2.0.21 with a small JUnit-compatible runner, not under Gradle.
-- The git workflow tests use the real `git` command line: a bare remote, two clones, offline work on both, rebase, push, and identical stock on both sides afterwards. They also cover the empty-remote first push, discard, history, and revert.
-- Catalog round trips keep barcodes with leading zeros, and hand-edited files with bare numbers or broken lines are rejected with a line number.
+- 42 pytest tests: replay and stats, service operations, persistence across restarts, barcode decoding of generated UPC-A/EAN-13 images (including rotated), EXIF rotation, receipt slicing, the full upload → read → review → commit flow, duplicate-photo skipping, reader errors and retry, and the HTTP API.
+- The Claude and Ollama readers are tested against mocked HTTP. The tests check the exact request each one sends (model, structured-output schema, image slices, fallback header) and how replies, refusals and malformed answers are handled.
+- The browser test passes in Chromium at phone size, with no console errors.
 
 ## What was not verified
 
-- The `app` module. No Android SDK or Maven access was available, so nothing in `app/` has been compiled or run. Expect compile errors to fix on first build, especially around CameraX, Compose, and JGit API details.
-- `JGitVersionControl`. It mirrors the `CliGit` class the tests exercise, but it has never run. Revert conflict cleanup and rebase conflict reporting are the least certain parts.
-- The Open Food Facts URL and field names. They come from memory of the v2 API, and the parser was tested against a hand-written sample reply, not a live one.
-- The receipt parser against real receipts. It was tested on one synthetic receipt. Expect to tune the skip words, price pattern, and abbreviation table against your own stores.
+- **Neither receipt reader has run against a real model.** No API key or GPU was available. The first real receipts will show how good the extraction is, and the prompt in `pantry/receipts/schema.py` is the place to tune it.
+- No real phone camera or real receipt photos. The fake camera shows a clean, flat barcode.
+- `tailscale serve` and the systemd unit were written from documentation, not run on a Bazzite machine.
+- The Open Food Facts lookup was tested against a hand-written reply, not the live API.
 
 ## Known gaps
 
-- `catalog.jsonl` can conflict if two devices edit the same product while offline. Sync aborts and names the file. There is no in-app resolution yet.
-- Revert works cleanly for recent commits. Reverting an older commit fails if later commits appended to the same event file.
-- An `adjust` event can set a new expiry but cannot clear one.
-- Removing more than is recorded produces a warning on the Changes tab instead of negative stock.
-- Receipt photos are not kept, only the OCR text.
-- Authentication is an HTTPS token only. JGit's SSH support on Android was left out on purpose.
-- ML Kit is free and runs on the phone, but it is not open source. That blocks F-Droid distribution. The scanner and recognizer are each one function in `scan/Camera.kt` if you want to swap in zxing-cpp or Tesseract.
-- Stats (average unit price, usage per day, days of stock, waste share) show on each product card. There is no trends screen.
+- The app needs a connection to the server. Receipt photos taken offline can be imported later, but scanning and stock changes can't be queued offline.
+- No login. Anyone on your tailnet can use it, which is usually just you.
+- An `adjust` can set a new expiry but can't clear one.
+- No charts or trends screen. Price, usage rate and waste share appear on each product card.
