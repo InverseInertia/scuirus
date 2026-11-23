@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f6b3f">
+<title>Scuirus</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1 id="title">Stock</h1>
+  <button id="add-btn" class="icon-btn" aria-label="Add item" data-view-only="stock">＋</button>
+</header>
+
+<main>
+  <!-- Stock -->
+  <section id="view-stock" class="view">
+    <div class="filters">
+      <input id="search" type="search" placeholder="Search" autocomplete="off">
+      <select id="loc-filter" aria-label="Location">
+        <option value="">All places</option>
+      </select>
+    </div>
+    <div id="warnings"></div>
+    <ul id="stock-list" class="cards"></ul>
+    <p id="stock-empty" class="empty" hidden>Nothing in stock yet. Scan a barcode or import a receipt.</p>
+  </section>
+
+  <!-- Scan -->
+  <section id="view-scan" class="view" hidden>
+    <div class="segmented" role="radiogroup" aria-label="Scan mode">
+      <button data-mode="use" class="on" role="radio" aria-checked="true">Use up</button>
+      <button data-mode="add" role="radio" aria-checked="false">Add</button>
+    </div>
+    <div class="camera">
+      <video id="video" playsinline muted></video>
+      <div class="aim"></div>
+      <p id="camera-msg" class="camera-msg">Camera is off</p>
+    </div>
+    <div class="row">
+      <button id="cam-toggle" class="primary">Start camera</button>
+      <label class="button">Photo<input id="scan-photo" type="file" accept="image/*" capture="environment" hidden></label>
+    </div>
+    <form id="manual-code" class="row">
+      <input name="code" inputmode="numeric" placeholder="Type a barcode" autocomplete="off">
+      <button>Go</button>
+    </form>
+    <ul id="scan-log" class="log"></ul>
+  </section>
+
+  <!-- Receipts -->
+  <section id="view-receipts" class="view" hidden>
+    <div class="import">
+      <label class="button primary big">Import receipt photos
+        <input id="receipt-files" type="file" accept="image/*" multiple hidden>
+      </label>
+      <label class="check"><input id="one-receipt" type="checkbox"> These photos are parts of one long receipt</label>
+      <p id="reader-info" class="hint"></p>
+    </div>
+    <ul id="receipt-list" class="cards"></ul>
+  </section>
+
+  <!-- History -->
+  <section id="view-history" class="view" hidden>
+    <ul id="history-list" class="log"></ul>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="stock" class="on">Stock</button>
+  <button data-view="scan">Scan</button>
+  <button data-view="receipts">Receipts</button>
+  <button data-view="history">History</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Product form -->
+<dialog id="product-dialog">
+  <form id="product-form" method="dialog">
+    <h2>Product</h2>
+    <input type="hidden" name="id">
+    <label>Name<input name="name" required></label>
+    <label>Barcode<input name="barcode" inputmode="numeric"></label>
+    <div class="grid2">
+      <label>Unit<input name="unit" value="each" list="unit-list"></label>
+      <label>Kept in<select name="location"></select></label>
+      <label>Pack size<input name="pack_size" placeholder="946 ml"></label>
+      <label>Uses per scan<input name="default_use" value="1" inputmode="decimal"></label>
+      <label>Category<input name="category"></label>
+      <label>Keeps (days)<input name="shelf_life_days" type="number" min="1"></label>
+    </div>
+    <datalist id="unit-list"><option>each</option><option>lb</option><option>kg</option><option>oz</option><option>g</option><option>carton</option><option>bag</option><option>box</option><option>can</option><option>bottle</option></datalist>
+    <p class="error" hidden></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button value="save" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Add stock -->
+<dialog id="add-dialog">
+  <form id="add-form" method="dialog">
+    <h2>Add stock</h2>
+    <label>Product<select name="product_id" required></select></label>
+    <button type="button" id="add-new-product" class="link">New product…</button>
+    <div class="grid2">
+      <label>Quantity<input name="qty" value="1" inputmode="decimal"></label>
+      <label>Price paid<input name="price" inputmode="decimal" placeholder="optional"></label>
+      <label>Expires<input name="expires" type="date"></label>
+      <label>Kept in<select name="location"><option value="">Default</option></select></label>
+    </div>
+    <p class="error" hidden></p>
+    <div class="row end">
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button value="save" class="primary">Add</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Edit lot -->
+<dialog id="lot-dialog">
+  <form id="lot-form" method="dialog">
+    <h2>Edit lot</h2>
+    <input type="hidden" name="id">
+    <div class="grid2">
+      <label>Remaining<input name="remaining" inputmode="decimal"></label>
+      <label>Expires<input name="expires" type="date"></label>
+      <label>Kept in<select name="location"></select></label>
+      <label>Price paid<input name="price" inputmode="decimal"></label>
+    </div>
+    <p class="error" hidden></p>
+    <div class="row end">
+      <button type="button" id="void-lot" class="danger">Added by mistake</button>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button value="save" class="primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Receipt review -->
+<dialog id="receipt-dialog" class="full">
+  <div class="sheet">
+    <header class="sheet-head">
+      <button id="receipt-close" class="icon-btn" aria-label="Close">✕</button>
+      <h2 id="receipt-title">Receipt</h2>
+    </header>
+    <div id="receipt-body"></div>
+  </div>
+</dialog>
+
+<dialog id="image-dialog" class="full">
+  <button class="icon-btn close-img" aria-label="Close">✕</button>
+  <img id="image-full" alt="Receipt photo">
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

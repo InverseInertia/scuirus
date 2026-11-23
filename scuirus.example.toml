@@ -1,0 +1,25 @@
+# Copy to scuirus.toml (gitignored) and edit. Environment variables override these:
+# SCUIRUS_DATA_DIR, SCUIRUS_READER, SCUIRUS_CLAUDE_MODEL, SCUIRUS_OLLAMA_URL, SCUIRUS_OLLAMA_MODEL, OFF_CONTACT,
+# ANTHROPIC_API_KEY.
+
+# SQLite database and receipt photos live here. Back this folder up.
+data_dir = "data"
+
+[receipts]
+# "claude": Anthropic API, most accurate, photos are sent to Anthropic, costs a few cents per receipt.
+# "ollama": a vision model on this machine, nothing leaves the house.
+# "none":   receipts can be uploaded but not read.
+reader = "claude"
+
+[claude]
+model = "claude-opus-5-5"
+effort = "high"          # low | medium | high. Lower is cheaper and faster, and may miss more lines.
+# api_key = "sk-ant-..." # or set ANTHROPIC_API_KEY
+
+[ollama]
+url = "http://127.0.0.1:11434"
+model = "qwen2.5vl:7b"   # any vision model you have pulled; bigger reads small print better
+
+[openfoodfacts]
+# Open Food Facts asks API users to identify themselves with a contact address.
+contact = ""
